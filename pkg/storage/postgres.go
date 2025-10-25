@@ -63,7 +63,8 @@ func NewPostgresStore(cfg PostgresConfig) (*PostgresStore, error) {
 	}
 
 	if err := db.AutoMigrate(&Fragment{}); err != nil {
-		return nil, fmt.Errorf("auto-migrate kv_entries: %w", err)
+		_ = sqlDB.Close()
+		return nil, fmt.Errorf("auto-migrate fragments: %w", err)
 	}
 
 	logger.Info("Connected to PostgreSQL successfully!")
