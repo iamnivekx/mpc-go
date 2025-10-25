@@ -143,9 +143,9 @@ The application uses a YAML configuration file (`config.yaml`) with the followin
 ### Start nodes
 
 ```shell
-$ mpcium start -n node0
-$ mpcium start -n node1
-$ mpcium start -n node2
+$ mpc-node start -n node0
+$ mpc-node start -n node1
+$ mpc-node start -n node2
 
 ```
 
