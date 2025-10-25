@@ -163,8 +163,28 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
+	if err := validateStorage(&cfg); err != nil {
+		return nil, fmt.Errorf("config validation failed: %w", err)
+	}
+
 	setConfig(&cfg)
 	return &cfg, nil
+}
+
+func validateStorage(cfg *Config) error {
+	switch cfg.StorageType {
+	case StorageTypeBadger:
+		// Badger passwords can be injected at runtime via secure channels (prompt, systemd credentials, etc.).
+		// We therefore allow the initial configuration to omit the password and rely on callers to provide it
+		// before using the storage layer. This mirrors the existing runtime validation in the CLI.
+	case StorageTypePostgres:
+		if cfg.PostgresDSN == "" {
+			return fmt.Errorf("postgres_dsn is required when storage_type is %q", StorageTypePostgres)
+		}
+	default:
+		return fmt.Errorf("invalid storage_type %q. Must be one of: %s, %s", cfg.StorageType, StorageTypeBadger, StorageTypePostgres)
+	}
+	return nil
 }
 
 func Load() (*Config, error) {

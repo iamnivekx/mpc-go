@@ -134,6 +134,63 @@ func TestValidateEnvironment(t *testing.T) {
 	}
 }
 
+func TestValidateStorage(t *testing.T) {
+	tests := []struct {
+		name    string
+		cfg     Config
+		wantErr bool
+	}{
+		{
+			name: "valid badger",
+			cfg: Config{
+				StorageType:    StorageTypeBadger,
+				BadgerPassword: "secret",
+			},
+			wantErr: false,
+		},
+		{
+			name: "badger missing password allowed",
+			cfg: Config{
+				StorageType: StorageTypeBadger,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid postgres",
+			cfg: Config{
+				StorageType: StorageTypePostgres,
+				PostgresDSN: "postgres://example",
+			},
+			wantErr: false,
+		},
+		{
+			name: "postgres missing dsn",
+			cfg: Config{
+				StorageType: StorageTypePostgres,
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid storage type",
+			cfg: Config{
+				StorageType: "unsupported",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateStorage(&tt.cfg)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestConfigAccessFunctions(t *testing.T) {
 	// Create a test config
 	testConfig := &Config{
