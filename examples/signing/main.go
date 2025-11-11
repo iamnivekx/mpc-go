@@ -25,7 +25,7 @@ func main() {
 		logger.Fatal("Failed to load config", err)
 	}
 	logger.Init(environment, true)
-	walletID := "83120345-e0b9-46d2-9f5d-06418c38acec"
+	walletID := "2103ee35-847d-4220-8bc8-564d37e5d45a"
 
 	algorithm := cfg.EventInitiatorAlgorithm
 	if algorithm == "" {
@@ -78,7 +78,7 @@ func main() {
 	startTime := time.Now()
 
 	txMsg := &types.SigningMessage{
-		KeyType:  types.KeyTypeEd25519,
+		KeyType:  types.KeyTypeSecp256k1,
 		WalletID: walletID,
 		TxID:     txID,
 		Tx:       dummyTx,
@@ -107,9 +107,6 @@ func main() {
 			"txID", response.TxID,
 			"err_code", response.ErrorCode,
 			"err_reason", response.ErrorReason,
-			"r", hex.EncodeToString(response.R),
-			"s", hex.EncodeToString(response.S),
-			"signature_recovery", hex.EncodeToString(response.SignatureRecovery),
 			"signature", hex.EncodeToString(response.Signature),
 			"duration(s)", fmt.Sprintf("%.3f", duration.Seconds()),
 			"duration(ms)", duration.Milliseconds(),
