@@ -116,6 +116,15 @@ The application uses a YAML configuration file (`config.yaml`) with the followin
 - `badger_password`: Password for encrypting the BadgerDB database
 - `db_path`: Path where the database files are stored
 
+#### Supplying the Badger password at runtime
+
+If you do not want to store the Badger password in `config.yaml`, leave `badger_password` empty and choose one of the runtime injection methods provided by the node CLI:
+
+1. **Interactive prompts** – start the node with `mpcium start --prompt-credentials`. The command line prompts you to type and confirm the password before the node continues.
+2. **Password file** – start the node with `mpcium start --password-file /path/to/secret`. The file contents are read, trimmed, and loaded into memory without persisting them anywhere else.
+
+The runtime helper updates the in-memory configuration (`pkg/config`) so that the storage factory and backup scheduler receive the decrypted password exactly as if it had been placed in the YAML file. This behaviour relies on the validation relaxed in `pkg/config/config.go`, which now allows the Badger backend to initialise without a static password while still enforcing requirements for Postgres configurations.
+
 ### Backup Configuration
 
 - `backup_enabled`: Enable/disable automatic backups (default: true)
@@ -143,9 +152,9 @@ The application uses a YAML configuration file (`config.yaml`) with the followin
 ### Start nodes
 
 ```shell
-$ mpcium start -n node0
-$ mpcium start -n node1
-$ mpcium start -n node2
+$ mpc-node start -n node0
+$ mpc-node start -n node1
+$ mpc-node start -n node2
 
 ```
 

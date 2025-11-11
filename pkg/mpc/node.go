@@ -36,7 +36,7 @@ type Node struct {
 	preParams    []*keygen.LocalPreParams
 	pubSub       messaging.PubSub
 	direct       messaging.DirectMessaging
-	KVstore      storage.Store
+	KVstore      storage.Storage
 	keyinfoStore node.KeyStore
 
 	identityStore node.IdentityStore
@@ -49,7 +49,7 @@ func NewNode(
 	peerIDs []string,
 	pubSub messaging.PubSub,
 	direct messaging.DirectMessaging,
-	KVstore storage.Store,
+	KVstore storage.Storage,
 	keyinfoStore node.KeyStore,
 	peerRegistry PeerRegistry,
 	identityStore node.IdentityStore,
@@ -476,7 +476,7 @@ func (p *Node) getVersion(sessionType core.SessionType, walletID string) int {
 	case core.SessionTypeEDDSA:
 		composeKey = fmt.Sprintf("eddsa:%s", walletID)
 	default:
-		logger.Fatal("Unknown session type", errors.New("Unknown session type"))
+		logger.Fatal("unknown session type", errors.New("unknown session type"))
 	}
 	keyinfo, err := p.keyinfoStore.Get(composeKey)
 	if err != nil {
