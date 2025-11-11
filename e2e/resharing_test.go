@@ -420,22 +420,10 @@ func testECDSASigningAfterResharing(t *testing.T, suite *E2ETestSuite, walletID,
 					t.Errorf("ECDSA signing failed for wallet %s: %s (%s)", walletID, result.ErrorReason, result.ErrorCode)
 				} else {
 					t.Logf("ECDSA signing with resharing keys succeeded for wallet %s", walletID)
-					assert.NotEmpty(t, result.R, "ECDSA R value should not be empty for wallet %s", walletID)
-					assert.NotEmpty(t, result.S, "ECDSA S value should not be empty for wallet %s", walletID)
-					assert.NotEmpty(t, result.SignatureRecovery, "ECDSA signature recovery should not be empty for wallet %s", walletID)
+					assert.NotEmpty(t, result.Signature, "ECDSA signature should not be empty for wallet %s", walletID)
 
 					// Compose the signature using the proper function
-					composedSig, err := ComposeSignature(result.SignatureRecovery, result.R, result.S)
-					if err != nil {
-						t.Errorf("Failed to compose ECDSA signature for wallet %s: %v", walletID, err)
-					} else {
-						t.Logf("Successfully composed ECDSA signature for wallet %s: %d bytes", walletID, len(composedSig))
-						assert.Equal(t, 65, len(composedSig), "Composed ECDSA signature should be 65 bytes for wallet %s", walletID)
-
-						// Log the signature components for debugging
-						t.Logf("ECDSA signature components - R: %d bytes, S: %d bytes, V: %d bytes",
-							len(result.R), len(result.S), len(result.SignatureRecovery))
-					}
+					assert.Equal(t, 65, len(result.Signature), "ECDSA signature should be 65 bytes for wallet %s", walletID)
 				}
 				return
 			}

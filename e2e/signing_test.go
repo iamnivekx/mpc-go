@@ -1,9 +1,7 @@
 package e2e
 
 import (
-	"errors"
 	"fmt"
-	"math/big"
 	"testing"
 	"time"
 
@@ -12,44 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-)
-
-var ErrInvalidSig = errors.New("invalid signature")
-
-// ComposeSignature composes a signature from v, r, s components
-func ComposeSignature(v, r, s []byte) ([]byte, error) {
-	V := v[0]
-	if !validateSignatureValues(
-		V,
-		new(big.Int).SetBytes(r),
-		new(big.Int).SetBytes(s), false) {
-		return nil, ErrInvalidSig
-	}
-	// encode the signature in uncompressed format
-	sig := make([]byte, 65)
-	copy(sig[32-len(r):32], r)
-	copy(sig[64-len(s):64], s)
-	sig[64] = V
-	return sig, nil
-}
-
-// validateSignatureValues verifies whether the signature values are valid
-func validateSignatureValues(v uint8, r, s *big.Int, homestead bool) bool {
-	if r.Cmp(big.NewInt(1)) < 0 || s.Cmp(big.NewInt(1)) < 0 {
-		return false
-	}
-	// reject upper range of s values (ECDSA malleability)
-	// see discussion in secp256k1/libsecp256k1/include/secp256k1.h
-	if homestead && s.Cmp(secp256k1halfN) > 0 {
-		return false
-	}
-	// Frontier: allow s to be in full N range
-	return r.Cmp(secp256k1N) < 0 && s.Cmp(secp256k1N) < 0 && (v == 0 || v == 1)
-}
-
-var (
-	secp256k1N, _  = new(big.Int).SetString("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
-	secp256k1halfN = new(big.Int).Div(secp256k1N, big.NewInt(2))
 )
 
 func TestSigning(t *testing.T) {
@@ -356,22 +316,10 @@ func testECDSASigning(t *testing.T, suite *E2ETestSuite, walletID, message strin
 					t.Errorf("ECDSA signing failed for wallet %s: %s (%s)", walletID, result.ErrorReason, result.ErrorCode)
 				} else {
 					t.Logf("ECDSA signing succeeded for wallet %s", walletID)
-					assert.NotEmpty(t, result.R, "ECDSA R value should not be empty for wallet %s", walletID)
-					assert.NotEmpty(t, result.S, "ECDSA S value should not be empty for wallet %s", walletID)
-					assert.NotEmpty(t, result.SignatureRecovery, "ECDSA signature recovery should not be empty for wallet %s", walletID)
+					assert.NotEmpty(t, result.Signature, "ECDSA signature should not be empty for wallet %s", walletID)
 
 					// Compose the signature using the proper function
-					composedSig, err := ComposeSignature(result.SignatureRecovery, result.R, result.S)
-					if err != nil {
-						t.Errorf("Failed to compose ECDSA signature for wallet %s: %v", walletID, err)
-					} else {
-						t.Logf("Successfully composed ECDSA signature for wallet %s: %d bytes", walletID, len(composedSig))
-						assert.Equal(t, 65, len(composedSig), "Composed ECDSA signature should be 65 bytes for wallet %s", walletID)
-
-						// Log the signature components for debugging
-						t.Logf("ECDSA signature components - R: %d bytes, S: %d bytes, V: %d bytes",
-							len(result.R), len(result.S), len(result.SignatureRecovery))
-					}
+					assert.Equal(t, 65, len(result.Signature), "ECDSA signature should be 65 bytes for wallet %s", walletID)
 				}
 				return
 			}
@@ -483,22 +431,10 @@ func testECDSASigningWithSharedListener(t *testing.T, suite *E2ETestSuite, walle
 					t.Errorf("ECDSA signing failed for wallet %s: %s (%s)", walletID, result.ErrorReason, result.ErrorCode)
 				} else {
 					t.Logf("ECDSA signing succeeded for wallet %s", walletID)
-					assert.NotEmpty(t, result.R, "ECDSA R value should not be empty for wallet %s", walletID)
-					assert.NotEmpty(t, result.S, "ECDSA S value should not be empty for wallet %s", walletID)
-					assert.NotEmpty(t, result.SignatureRecovery, "ECDSA signature recovery should not be empty for wallet %s", walletID)
+					assert.NotEmpty(t, result.Signature, "ECDSA signature should not be empty for wallet %s", walletID)
 
 					// Compose the signature using the proper function
-					composedSig, err := ComposeSignature(result.SignatureRecovery, result.R, result.S)
-					if err != nil {
-						t.Errorf("Failed to compose ECDSA signature for wallet %s: %v", walletID, err)
-					} else {
-						t.Logf("Successfully composed ECDSA signature for wallet %s: %d bytes", walletID, len(composedSig))
-						assert.Equal(t, 65, len(composedSig), "Composed ECDSA signature should be 65 bytes for wallet %s", walletID)
-
-						// Log the signature components for debugging
-						t.Logf("ECDSA signature components - R: %d bytes, S: %d bytes, V: %d bytes",
-							len(result.R), len(result.S), len(result.SignatureRecovery))
-					}
+					assert.Equal(t, 65, len(result.Signature), "ECDSA signature should be 65 bytes for wallet %s", walletID)
 				}
 				return
 			}

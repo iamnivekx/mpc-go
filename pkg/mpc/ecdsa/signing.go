@@ -11,6 +11,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/keygen"
 	"github.com/bnb-chain/tss-lib/v2/ecdsa/signing"
 	"github.com/bnb-chain/tss-lib/v2/tss"
+	"github.com/fystack/mpcium/pkg/encoding"
 	"github.com/fystack/mpcium/pkg/logger"
 	"github.com/fystack/mpcium/pkg/messaging"
 	"github.com/fystack/mpcium/pkg/mpc/core"
@@ -154,12 +155,13 @@ func (s *ecdsaSigningSession) Sign(onSuccess func(data []byte)) {
 				return
 			}
 
+			// Compose R, S, V into 65-byte signature: [R (32 bytes)][S (32 bytes)][V (1 byte)]
+			sigBytes := encoding.ComposeECDSASignature(sig.R, sig.S, sig.SignatureRecovery)
+
 			r := types.SigningResponse{
-				WalletID:          s.WalletID,
-				TxID:              s.txID,
-				R:                 sig.R,
-				S:                 sig.S,
-				SignatureRecovery: sig.SignatureRecovery,
+				WalletID:  s.WalletID,
+				TxID:      s.txID,
+				Signature: sigBytes,
 			}
 
 			bytes, err := json.Marshal(r)
