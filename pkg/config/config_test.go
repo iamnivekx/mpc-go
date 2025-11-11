@@ -136,9 +136,10 @@ func TestValidateEnvironment(t *testing.T) {
 
 func TestValidateStorage(t *testing.T) {
 	tests := []struct {
-		name    string
-		cfg     Config
-		wantErr bool
+		name        string
+		cfg         Config
+		wantErr     bool
+		expectedDSN string
 	}{
 		{
 			name: "valid badger",
@@ -161,7 +162,17 @@ func TestValidateStorage(t *testing.T) {
 				StorageType: StorageTypePostgres,
 				PostgresDSN: "postgres://example",
 			},
-			wantErr: false,
+			wantErr:     false,
+			expectedDSN: "postgres://example",
+		},
+		{
+			name: "postgres dsn trimmed",
+			cfg: Config{
+				StorageType: StorageTypePostgres,
+				PostgresDSN: "  postgres://example?sslmode=require  ",
+			},
+			wantErr:     false,
+			expectedDSN: "postgres://example?sslmode=require",
 		},
 		{
 			name: "postgres missing dsn",
@@ -186,6 +197,9 @@ func TestValidateStorage(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
+				if tt.expectedDSN != "" {
+					assert.Equal(t, tt.expectedDSN, tt.cfg.PostgresDSN)
+				}
 			}
 		})
 	}

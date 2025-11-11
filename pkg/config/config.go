@@ -178,9 +178,11 @@ func validateStorage(cfg *Config) error {
 		// We therefore allow the initial configuration to omit the password and rely on callers to provide it
 		// before using the storage layer. This mirrors the existing runtime validation in the CLI.
 	case StorageTypePostgres:
-		if cfg.PostgresDSN == "" {
+		dsn := strings.TrimSpace(cfg.PostgresDSN)
+		if dsn == "" {
 			return fmt.Errorf("postgres_dsn is required when storage_type is %q", StorageTypePostgres)
 		}
+		cfg.PostgresDSN = dsn
 	default:
 		return fmt.Errorf("invalid storage_type %q. Must be one of: %s, %s", cfg.StorageType, StorageTypeBadger, StorageTypePostgres)
 	}
