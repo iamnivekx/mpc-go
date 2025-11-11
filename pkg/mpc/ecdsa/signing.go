@@ -67,8 +67,8 @@ func NewECDSASigningSession(
 					return fmt.Sprintf("sign:ecdsa:direct:%s:%s:%s", fromID, toID, txID)
 				},
 			},
-			ComposeKey: func(waleltID string) string {
-				return fmt.Sprintf("ecdsa:%s", waleltID)
+			ComposeKey: func(walletID string) string {
+				return fmt.Sprintf("ecdsa:%s", walletID)
 			},
 			GetRoundFunc:  GetMsgRound,
 			ResultQueue:   resultQueue,
@@ -88,7 +88,7 @@ func (s *ecdsaSigningSession) Init(tx *big.Int) error {
 
 	keyInfo, err := s.KeyinfoStore.Get(s.ComposeKey(s.WalletID))
 	if err != nil {
-		return fmt.Errorf("Failed to get key info data: %w", err)
+		return fmt.Errorf("failed to get key info data: %w", err)
 	}
 
 	if len(s.ParticipantPeerIDs) < keyInfo.Threshold+1 {
@@ -123,7 +123,7 @@ func (s *ecdsaSigningSession) Init(tx *big.Int) error {
 	s.data = &data
 	s.Version = keyInfo.Version
 	s.tx = tx
-	logger.Info("Initialized sigining session successfully!")
+	logger.Info("Initialized signing session successfully!")
 	return nil
 }
 
@@ -150,7 +150,7 @@ func (s *ecdsaSigningSession) Sign(onSuccess func(data []byte)) {
 
 			ok := ecdsa.Verify(&pk, s.tx.Bytes(), new(big.Int).SetBytes(sig.R), new(big.Int).SetBytes(sig.S))
 			if !ok {
-				s.ErrCh <- errors.New("Failed to verify signature")
+				s.ErrCh <- errors.New("failed to verify signature")
 				return
 			}
 
@@ -164,7 +164,7 @@ func (s *ecdsaSigningSession) Sign(onSuccess func(data []byte)) {
 
 			bytes, err := json.Marshal(r)
 			if err != nil {
-				s.ErrCh <- fmt.Errorf("Failed to marshal raw signature: %w", err)
+				s.ErrCh <- fmt.Errorf("failed to marshal raw signature: %w", err)
 				return
 			}
 
@@ -172,14 +172,13 @@ func (s *ecdsaSigningSession) Sign(onSuccess func(data []byte)) {
 				IdempotentKey: s.IdempotentKey,
 			})
 			if err != nil {
-				s.ErrCh <- fmt.Errorf("Failed to publish sign success message: %w", err)
+				s.ErrCh <- fmt.Errorf("failed to publish sign success message: %w", err)
 
 				return
 			}
 
 			logger.Info("[SIGN] Sign successfully", "walletID", s.WalletID)
-			err = s.Close()
-			if err != nil {
+			if err := s.Close(); err != nil {
 				logger.Error("Failed to close session", err)
 			}
 
