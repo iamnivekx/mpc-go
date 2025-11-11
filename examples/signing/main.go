@@ -25,7 +25,7 @@ func main() {
 		logger.Fatal("Failed to load config", err)
 	}
 	logger.Init(environment, true)
-	walletID := "d80cb708-e0d2-49de-b5e9-bc7d62400aff"
+	walletID := "83120345-e0b9-46d2-9f5d-06418c38acec"
 
 	algorithm := cfg.EventInitiatorAlgorithm
 	if algorithm == "" {
@@ -76,6 +76,7 @@ func main() {
 
 	// Record signing start time
 	startTime := time.Now()
+
 	txMsg := &types.SigningMessage{
 		KeyType:  types.KeyTypeEd25519,
 		WalletID: walletID,
@@ -90,6 +91,15 @@ func main() {
 
 	// 3) Listen for signing results
 	err = mpcClient.OnSignResult(func(response types.SigningResponse) {
+		if response.TxID != txID {
+			logger.Warn(
+				"ignoring signing result for different txID",
+				"expected", txID,
+				"received", response.TxID,
+			)
+			return
+		}
+
 		// Calculate signing duration
 		duration := time.Since(startTime)
 
@@ -115,13 +125,22 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
+	// Add timeout to prevent hanging forever
+	timeout := 30 * time.Second
+	timeoutTimer := time.NewTimer(timeout)
+	defer timeoutTimer.Stop()
+
 	select {
 	case <-signingDone:
 		// Calculate total duration
-		totalDuration := time.Since(startTime)
+		duration := time.Since(startTime)
 		fmt.Printf("Signing completed cost %s (%dms)",
-			totalDuration.String(), totalDuration.Milliseconds())
+			duration.String(), duration.Milliseconds())
 	case <-stop:
 		fmt.Println("Received interrupt signal. Shutting down.")
+		return
+	case <-timeoutTimer.C:
+		fmt.Printf("Timeout after %v. Signing may still be in progress.", timeout)
+		return
 	}
 }
